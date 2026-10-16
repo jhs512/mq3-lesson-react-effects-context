@@ -1,0 +1,266 @@
+{
+  "schema_version": 1,
+  "id": "react-effects-context",
+  "revision": "v1.0.0",
+  "title": "React Effect·Context·저장",
+  "description": "외부 시스템과 동기화하고 공통 상태를 전달해요.",
+  "sources": [
+    "https://slog.gg/p/14149"
+  ],
+  "sections": [
+    {
+      "id": "reading-1",
+      "title": "Effect를 쓰는 자리",
+      "body": "Effect는 렌더링 바깥의 시스템과 동기화해요.\nlocalStorage나 문서 제목이 그 예예요.\n계산 가능한 값은 렌더링 중 계산하면 돼요.\n남은 할 일 수에 별도 Effect는 필요 없어요.\n의존성 배열에는 사용하는 반응형 값을 넣어요.\n이벤트 리스너나 타이머는 정리 함수를 반환해요.\n조심하세요. Effect에서 무조건 상태를 바꾸지 마세요.\n렌더링과 Effect가 반복될 수 있어요.\n"
+    },
+    {
+      "id": "reading-2",
+      "title": "초기 읽기와 공통 상태",
+      "body": "useState 초기화 함수에서 저장 값을 읽어요.\n이후 변경은 Effect에서 저장하세요.\n저장한 JSON이 손상된 경우도 처리해야 해요.\nContext는 여러 단계 아래로 값을 전달해요.\nProvider 범위 안에서 useContext로 읽어요.\n가까운 부모의 props만으로 충분하면 props를 써요.\n먼저 테마 버튼을 누르고 화면을 확인하세요.\n다음에는 새로고침 후 같은 테마인지 확인해요.\n"
+    },
+    {
+      "id": "reading-ref",
+      "title": "ref와 사용자 정의 훅",
+      "body": "\nref는 렌더링 사이에 값을 보관해요.\nref.current를 바꿔도 다시 그리지는 않아요.\n입력에 초점을 줄 때 실제 DOM을 보관할 수 있어요.\n화면에 표시할 값은 state로 관리하세요.\n사용자 정의 훅은 use로 시작하는 함수예요.\n훅을 묶어 같은 로직을 재사용할 수 있어요.\n조심하세요. 훅 재사용은 상태 공유가 아니에요.\n두 번 호출한 useState는 서로 다른 상태예요.\n상태 공유는 공통 부모나 Context로 해요.\n훅은 조건문·반복문 안에서 호출하지 마세요.\n항상 컴포넌트나 사용자 정의 훅의 위쪽에서 호출해요.\n"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "theme-context",
+      "title": "테마를 공유하고 저장하기",
+      "goal": "ThemeContext로 테마와 변경 함수를 전달하세요.\nmain의 data-theme은 light 또는 dark예요.\nbutton#theme은 현재 테마를 표시하고 클릭하면 바꿔요.\nlocalStorage 키는 mq3-theme이에요.\n새로고침 뒤에도 선택한 테마가 유지돼요.",
+      "language": "web",
+      "entry_file": "App.jsx",
+      "starter_code": "import React from 'react';\nimport {createRoot} from 'react-dom/client';\n// 컴포넌트를 작성하세요.\ncreateRoot(document.getElementById('root')).render(<h1>준비 중</h1>);\n",
+      "solution": "import React,{useState,useEffect,createContext,useContext} from 'react';\nimport {createRoot} from 'react-dom/client';\nconst ThemeContext=createContext(null);\nfunction ThemeButton() {\n  // 중간 컴포넌트의 props 전달 없이 공통 값을 읽어요.\n  const {theme,setTheme}=useContext(ThemeContext);\n  return <button id=\"theme\" onClick={()=>setTheme(t=>t==='light'?'dark':'light')}>{theme}</button>;\n}\nfunction App() {\n  const [theme,setTheme]=useState(()=>localStorage.getItem('mq3-theme') || 'light');\n  // 초기 읽기는 한 번, 이후 저장은 테마가 바뀔 때마다 해요.\n  useEffect(()=>{\n    // 외부 저장소와 화면의 상태를 동기화해요.\n    localStorage.setItem('mq3-theme',theme);\n    document.title='테마: '+theme;\n  },[theme]);\n  return <ThemeContext.Provider value={{theme,setTheme}}><main data-theme={theme}><ThemeButton/></main></ThemeContext.Provider>;\n}\ncreateRoot(document.getElementById('root')).render(<App/>);\n",
+      "files": {
+        "index.html": "<!doctype html>\n<html lang=\"ko\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style></style>\n<body>\n<div id=\"root\"></div>\n<script src=\"app.js\"></script>\n</body></html>\n"
+      },
+      "tests": [],
+      "web_checks": [
+        {
+          "kind": "text",
+          "selector": "#theme",
+          "pattern": "^light$"
+        },
+        {
+          "kind": "click",
+          "selector": "#theme"
+        },
+        {
+          "kind": "attribute",
+          "selector": "main",
+          "name": "data-theme",
+          "value": "dark"
+        },
+        {
+          "kind": "reload"
+        },
+        {
+          "kind": "text",
+          "selector": "#theme",
+          "pattern": "^dark$"
+        },
+        {
+          "kind": "click",
+          "selector": "#theme"
+        },
+        {
+          "kind": "attribute",
+          "selector": "main",
+          "name": "data-theme",
+          "value": "light"
+        }
+      ],
+      "mutations": [],
+      "required": true,
+      "narration": [
+        {
+          "action": "say",
+          "target": "problem",
+          "text": "ThemeContext로 테마와 변경 함수를 전달하세요.\nmain의 data-theme은 light 또는 dark예요.\nbutton#theme은 현재 테마를 표시하고 클릭하면 바꿔요.\nlocalStorage 키는 mq3-theme이에요.\n새로고침 뒤에도 선택한 테마가 유지돼요."
+        },
+        {
+          "action": "say",
+          "target": "editor",
+          "text": "조심하세요. 실행 성공과 모든 검사 통과는 달라요. 단계마다 결과를 확인해요."
+        },
+        {
+          "action": "set_code",
+          "code": "import React,{useState,useEffect,createContext,useContext} from 'react';\nimport {createRoot} from 'react-dom/client';\nconst ThemeContext=createContext(null);\nfunction ThemeButton() {\n  // 중간 컴포넌트의 props 전달 없이 공통 값을 읽어요.\n  const {theme,setTheme}=useContext(ThemeContext);\n  return <button id=\"theme\" onClick={()=>setTheme(t=>t==='light'?'dark':'light')}>{theme}</button>;\n}\nfunction App() {\n  const [theme,setTheme]=useState(()=>localStorage.getItem('mq3-theme') || 'light');\n  // 초기 읽기는 한 번, 이후 저장은 테마가 바뀔 때마다 해요.\n  useEffect(()=>{\n    // 외부 저장소와 화면의 상태를 동기화해요.\n    localStorage.setItem('mq3-theme',theme);\n    document.title='테마: '+theme;\n  },[theme]);\n  return <ThemeContext.Provider value={{theme,setTheme}}><main data-theme={theme}><ThemeButton/></main></ThemeContext.Provider>;\n}\n",
+          "say": "컴포넌트 함수를 먼저 준비해요. 아직 화면에 연결하지 않았어요."
+        },
+        {
+          "action": "run"
+        },
+        {
+          "action": "say",
+          "target": "output",
+          "text": "화면은 아직 비어 있어요. 이제 루트에 컴포넌트를 연결해요."
+        },
+        {
+          "action": "patch_code",
+          "before": "import React,{useState,useEffect,createContext,useContext} from 'react';\nimport {createRoot} from 'react-dom/client';\nconst ThemeContext=createContext(null);\nfunction ThemeButton() {\n  // 중간 컴포넌트의 props 전달 없이 공통 값을 읽어요.\n  const {theme,setTheme}=useContext(ThemeContext);\n  return <button id=\"theme\" onClick={()=>setTheme(t=>t==='light'?'dark':'light')}>{theme}</button>;\n}\nfunction App() {\n  const [theme,setTheme]=useState(()=>localStorage.getItem('mq3-theme') || 'light');\n  // 초기 읽기는 한 번, 이후 저장은 테마가 바뀔 때마다 해요.\n  useEffect(()=>{\n    // 외부 저장소와 화면의 상태를 동기화해요.\n    localStorage.setItem('mq3-theme',theme);\n    document.title='테마: '+theme;\n  },[theme]);\n  return <ThemeContext.Provider value={{theme,setTheme}}><main data-theme={theme}><ThemeButton/></main></ThemeContext.Provider>;\n}\n",
+          "after": "import React,{useState,useEffect,createContext,useContext} from 'react';\nimport {createRoot} from 'react-dom/client';\nconst ThemeContext=createContext(null);\nfunction ThemeButton() {\n  // 중간 컴포넌트의 props 전달 없이 공통 값을 읽어요.\n  const {theme,setTheme}=useContext(ThemeContext);\n  return <button id=\"theme\" onClick={()=>setTheme(t=>t==='light'?'dark':'light')}>{theme}</button>;\n}\nfunction App() {\n  const [theme,setTheme]=useState(()=>localStorage.getItem('mq3-theme') || 'light');\n  // 초기 읽기는 한 번, 이후 저장은 테마가 바뀔 때마다 해요.\n  useEffect(()=>{\n    // 외부 저장소와 화면의 상태를 동기화해요.\n    localStorage.setItem('mq3-theme',theme);\n    document.title='테마: '+theme;\n  },[theme]);\n  return <ThemeContext.Provider value={{theme,setTheme}}><main data-theme={theme}><ThemeButton/></main></ThemeContext.Provider>;\n}\ncreateRoot(document.getElementById('root')).render(<App/>);\n"
+        },
+        {
+          "action": "run"
+        },
+        {
+          "action": "say",
+          "target": "output",
+          "text": "완성한 화면을 확인하세요. 입력과 버튼도 직접 사용해보세요."
+        }
+      ],
+      "source_hash": "6ec9bcab5fc0ebf0c0b051370be0d7356c2c2761bdaaaf22bbafed8c54241c89"
+    },
+    {
+      "id": "shared-context",
+      "title": "두 소비자가 같은 상태 읽기",
+      "goal": "두 Counter 컴포넌트가 Context의 count를 공유해요.\n각 section.counter에 span 값과 `증가` 버튼을 둬요.\n어느 버튼을 눌러도 두 값이 함께 증가해요.",
+      "language": "web",
+      "entry_file": "App.jsx",
+      "starter_code": "import React from 'react';\nimport {createRoot} from 'react-dom/client';\n// 컴포넌트를 작성하세요.\ncreateRoot(document.getElementById('root')).render(<h1>준비 중</h1>);\n",
+      "solution": "import React,{useState,createContext,useContext} from 'react';\nimport {createRoot} from 'react-dom/client';\nconst CounterContext=createContext(null);\nfunction Counter() {\n    // 소비자마다 상태를 만들지 않고 Provider의 상태를 읽어요.\n    const {count,setCount}=useContext(CounterContext);\n    return <section className=\"counter\"><span>{count}</span><button onClick={()=>setCount(n=>n+1)}>증가</button></section>;\n}\nfunction App() {\n    const [count,setCount]=useState(0);\n    // 상태 소유자는 공통 부모 한 곳이에요.\n    return <CounterContext.Provider value={{count,setCount}}><Counter/><Counter/></CounterContext.Provider>;\n}\ncreateRoot(document.getElementById('root')).render(<App/>);\n",
+      "files": {
+        "index.html": "<!doctype html>\n<html lang=\"ko\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style></style>\n<body>\n<div id=\"root\"></div>\n<script src=\"app.js\"></script>\n</body></html>\n"
+      },
+      "tests": [],
+      "web_checks": [
+        {
+          "kind": "count",
+          "selector": ".counter",
+          "value": 2
+        },
+        {
+          "kind": "click",
+          "selector": ".counter:first-child button"
+        },
+        {
+          "kind": "text",
+          "selector": ".counter:first-child span",
+          "pattern": "^1$"
+        },
+        {
+          "kind": "text",
+          "selector": ".counter:last-child span",
+          "pattern": "^1$"
+        },
+        {
+          "kind": "click",
+          "selector": ".counter:last-child button"
+        },
+        {
+          "kind": "text",
+          "selector": ".counter:first-child span",
+          "pattern": "^2$"
+        }
+      ],
+      "mutations": [],
+      "required": true,
+      "narration": [
+        {
+          "action": "say",
+          "target": "problem",
+          "text": "두 Counter 컴포넌트가 Context의 count를 공유해요.\n각 section.counter에 span 값과 `증가` 버튼을 둬요.\n어느 버튼을 눌러도 두 값이 함께 증가해요."
+        },
+        {
+          "action": "say",
+          "target": "editor",
+          "text": "조심하세요. 실행 성공과 모든 검사 통과는 달라요. 단계마다 결과를 확인해요."
+        },
+        {
+          "action": "set_code",
+          "code": "import React,{useState,createContext,useContext} from 'react';\nimport {createRoot} from 'react-dom/client';\nconst CounterContext=createContext(null);\nfunction Counter() {\n    // 소비자마다 상태를 만들지 않고 Provider의 상태를 읽어요.\n    const {count,setCount}=useContext(CounterContext);\n    return <section className=\"counter\"><span>{count}</span><button onClick={()=>setCount(n=>n+1)}>증가</button></section>;\n}\nfunction App() {\n    const [count,setCount]=useState(0);\n    // 상태 소유자는 공통 부모 한 곳이에요.\n    return <CounterContext.Provider value={{count,setCount}}><Counter/><Counter/></CounterContext.Provider>;\n}\n",
+          "say": "컴포넌트 함수를 먼저 준비해요. 아직 화면에 연결하지 않았어요."
+        },
+        {
+          "action": "run"
+        },
+        {
+          "action": "say",
+          "target": "output",
+          "text": "화면은 아직 비어 있어요. 이제 루트에 컴포넌트를 연결해요."
+        },
+        {
+          "action": "patch_code",
+          "before": "import React,{useState,createContext,useContext} from 'react';\nimport {createRoot} from 'react-dom/client';\nconst CounterContext=createContext(null);\nfunction Counter() {\n    // 소비자마다 상태를 만들지 않고 Provider의 상태를 읽어요.\n    const {count,setCount}=useContext(CounterContext);\n    return <section className=\"counter\"><span>{count}</span><button onClick={()=>setCount(n=>n+1)}>증가</button></section>;\n}\nfunction App() {\n    const [count,setCount]=useState(0);\n    // 상태 소유자는 공통 부모 한 곳이에요.\n    return <CounterContext.Provider value={{count,setCount}}><Counter/><Counter/></CounterContext.Provider>;\n}\n",
+          "after": "import React,{useState,createContext,useContext} from 'react';\nimport {createRoot} from 'react-dom/client';\nconst CounterContext=createContext(null);\nfunction Counter() {\n    // 소비자마다 상태를 만들지 않고 Provider의 상태를 읽어요.\n    const {count,setCount}=useContext(CounterContext);\n    return <section className=\"counter\"><span>{count}</span><button onClick={()=>setCount(n=>n+1)}>증가</button></section>;\n}\nfunction App() {\n    const [count,setCount]=useState(0);\n    // 상태 소유자는 공통 부모 한 곳이에요.\n    return <CounterContext.Provider value={{count,setCount}}><Counter/><Counter/></CounterContext.Provider>;\n}\ncreateRoot(document.getElementById('root')).render(<App/>);\n"
+        },
+        {
+          "action": "run"
+        },
+        {
+          "action": "say",
+          "target": "output",
+          "text": "완성한 화면을 확인하세요. 입력과 버튼도 직접 사용해보세요."
+        }
+      ],
+      "source_hash": "83b5c20ee97c2089fc8f6437c7f09c36990324d3f15e7687ec98f9d2e009d94d"
+    },
+    {
+      "id": "focus-ref",
+      "title": "ref로 입력에 초점 주기",
+      "goal": "input#name과 button#focus를 만드세요.\n버튼 `입력으로 이동`을 누르면 입력에 초점을 주세요.\nuseRef로 실제 DOM 요소에 접근해보세요.",
+      "language": "web",
+      "entry_file": "App.jsx",
+      "starter_code": "import React from 'react';\nimport {createRoot} from 'react-dom/client';\n// 컴포넌트를 작성하세요.\ncreateRoot(document.getElementById('root')).render(<h1>준비 중</h1>);\n",
+      "solution": "import React,{useRef} from 'react';\nimport {createRoot} from 'react-dom/client';\nfunction App() {\n    // ref를 바꿔도 렌더링은 일어나지 않아요.\n    const input=useRef(null);\n    return <main><label htmlFor=\"name\">이름</label><input id=\"name\" ref={input}/>\n        <button id=\"focus\" onClick={()=>input.current?.focus()}>입력으로 이동</button></main>;\n}\ncreateRoot(document.getElementById('root')).render(<App/>);\n",
+      "files": {
+        "index.html": "<!doctype html>\n<html lang=\"ko\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style></style>\n<body>\n<div id=\"root\"></div>\n<script src=\"app.js\"></script>\n</body></html>\n"
+      },
+      "tests": [],
+      "web_checks": [
+        {
+          "kind": "click",
+          "selector": "#focus"
+        },
+        {
+          "kind": "focused",
+          "selector": "#name"
+        }
+      ],
+      "mutations": [],
+      "required": true,
+      "narration": [
+        {
+          "action": "say",
+          "target": "problem",
+          "text": "input#name과 button#focus를 만드세요.\n버튼 `입력으로 이동`을 누르면 입력에 초점을 주세요.\nuseRef로 실제 DOM 요소에 접근해보세요."
+        },
+        {
+          "action": "say",
+          "target": "editor",
+          "text": "조심하세요. 실행 성공과 모든 검사 통과는 달라요. 단계마다 결과를 확인해요."
+        },
+        {
+          "action": "set_code",
+          "code": "import React,{useRef} from 'react';\nimport {createRoot} from 'react-dom/client';\nfunction App() {\n    // ref를 바꿔도 렌더링은 일어나지 않아요.\n    const input=useRef(null);\n    return <main><label htmlFor=\"name\">이름</label><input id=\"name\" ref={input}/>\n        <button id=\"focus\" onClick={()=>input.current?.focus()}>입력으로 이동</button></main>;\n}\n",
+          "say": "컴포넌트 함수를 먼저 준비해요. 아직 화면에 연결하지 않았어요."
+        },
+        {
+          "action": "run"
+        },
+        {
+          "action": "say",
+          "target": "output",
+          "text": "화면은 아직 비어 있어요. 이제 루트에 컴포넌트를 연결해요."
+        },
+        {
+          "action": "patch_code",
+          "before": "import React,{useRef} from 'react';\nimport {createRoot} from 'react-dom/client';\nfunction App() {\n    // ref를 바꿔도 렌더링은 일어나지 않아요.\n    const input=useRef(null);\n    return <main><label htmlFor=\"name\">이름</label><input id=\"name\" ref={input}/>\n        <button id=\"focus\" onClick={()=>input.current?.focus()}>입력으로 이동</button></main>;\n}\n",
+          "after": "import React,{useRef} from 'react';\nimport {createRoot} from 'react-dom/client';\nfunction App() {\n    // ref를 바꿔도 렌더링은 일어나지 않아요.\n    const input=useRef(null);\n    return <main><label htmlFor=\"name\">이름</label><input id=\"name\" ref={input}/>\n        <button id=\"focus\" onClick={()=>input.current?.focus()}>입력으로 이동</button></main>;\n}\ncreateRoot(document.getElementById('root')).render(<App/>);\n"
+        },
+        {
+          "action": "run"
+        },
+        {
+          "action": "say",
+          "target": "output",
+          "text": "완성한 화면을 확인하세요. 입력과 버튼도 직접 사용해보세요."
+        }
+      ],
+      "source_hash": "0f1f63d452f623e27748c5993335cc7a6e16062e59420349ad6f7bcd9b414da2"
+    }
+  ]
+}
